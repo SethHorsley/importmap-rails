@@ -64,9 +64,18 @@ class Importmap::Packager
 
   private
     def post_json(body)
+      return check_path(body["provider"]) if body["provider"].include?("./")
       Net::HTTP.post(self.class.endpoint, body.to_json, "Content-Type" => "application/json")
     rescue => error
       raise HTTPError, "Unexpected transport error (#{error.class}: #{error.message})"
+    end
+
+    def check_path(path)
+      if Dir.exist?(path)
+        Struct.new(code: "200", body: File.read(path))
+      else
+        Struct.new(code: "404", body: "Not found")
+      end
     end
 
     def normalize_provider(name)
